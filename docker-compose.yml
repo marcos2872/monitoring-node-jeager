@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  jaeger:
+    networks:
+     - fit
+    image: jaegertracing/all-in-one:${JAEGER_VERSION:-latest}
+    volumes:
+      - "./jaeger-ui.json:/etc/jaeger/jaeger-ui.json"
+    command: --query.ui-config /etc/jaeger/jaeger-ui.json
+    container_name: jaeger
+    restart: always
+    environment:
+      - QUERY_BASE_PATH=/monitoring
+      - COLLECTOR_OTLP_ENABLED=true
+      - METRICS_STORAGE_TYPE=prometheus
+      - PROMETHEUS_SERVER_URL=http://prometheus:9090
+      - PROMETHEUS_QUERY_NAMESPACE=${PROMETHEUS_QUERY_NAMESPACE:-}
+      - PROMETHEUS_QUERY_DURATION_UNIT=${PROMETHEUS_QUERY_DURATION_UNIT:-}
+      - PROMETHEUS_QUERY_NORMALIZE_CALLS=true
+      - PROMETHEUS_QUERY_NORMALIZE_DURATION=true
+    ports:
+      - "8081:16686" # UI do Jaeger
+
+  otel-collector:
+    networks:
+      fit:
+        aliases: [spm_metrics_source]
+    image: otel/opentelemetry-collector-contrib:${OTEL_IMAGE_TAG:-0.112.0}
+    volumes:
+      - ./otel-collector-config.yml:/etc/otel-collector-config.yml
+    command: --config /etc/otel-collector-config.yml
+    container_name: otel-collector
+    restart: always
+    depends_on:
+      - jaeger
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+      - "9464:9464"   # Métricas para Prometheus
+      - "8888:8888"
+      - "8889:8889"
+      
+  prometheus:
+    networks:
+     - fit
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: always
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090" # UI do Prometheus
+
+networks:
+  fit:
+    driver: bridge
+    name: fit
