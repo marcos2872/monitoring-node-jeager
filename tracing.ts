@@ -20,7 +20,7 @@ if (env.MONITORING.toLowerCase().trim() === 'true') {
   const sdk = new opentelemetry.NodeSDK({
     traceExporter,
     resource: new Resource({
-      [ATTR_SERVICE_NAME]: 'fit-api',
+      [ATTR_SERVICE_NAME]: 'project-name',
       [ATTR_SERVICE_VERSION]: '1.0',
     }),
     metricReader: new PeriodicExportingMetricReader({
