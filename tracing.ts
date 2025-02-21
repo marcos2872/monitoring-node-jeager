@@ -8,7 +8,7 @@ import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import * as opentelemetry from '@opentelemetry/sdk-node';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 
-import { env } from './env';
+import { env } from './env'; // use your method of getting the environment variable
 
 if (env.MONITORING.toLowerCase().trim() === 'true') {
   diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.ERROR);
