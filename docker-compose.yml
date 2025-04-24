@@ -3,7 +3,7 @@ version: '3.8'
 services:
   jaeger:
     networks:
-     - fit
+     - monitoring
     image: jaegertracing/all-in-one:${JAEGER_VERSION:-latest}
     volumes:
       - "./jaeger-ui.json:/etc/jaeger/jaeger-ui.json"
@@ -24,7 +24,7 @@ services:
 
   otel-collector:
     networks:
-      fit:
+      monitoring:
         aliases: [spm_metrics_source]
     image: otel/opentelemetry-collector-contrib:${OTEL_IMAGE_TAG:-0.112.0}
     volumes:
@@ -40,19 +40,29 @@ services:
       - "9464:9464"   # Métricas para Prometheus
       - "8888:8888"
       - "8889:8889"
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m' # Limita cada arquivo de log a 10MB
+        max-file: '3'
       
   prometheus:
     networks:
-     - fit
+     - monitoring
     image: prom/prometheus:latest
     container_name: prometheus
     restart: always
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=1d' # y, w, d, h, m, s, ms
+      - '--storage.tsdb.retention.size=1024MB' # B, KB, MB, GB, TB, PB, EB
     ports:
       - "9090:9090" # UI do Prometheus
 
 networks:
-  fit:
+  monitoring:
     driver: bridge
-    name: fit
+    name: monitoring
